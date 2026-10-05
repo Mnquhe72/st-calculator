@@ -16,7 +16,9 @@ const PAGE = path.join(ROOT, "index.html");
 // which is useful when the project folder itself is read-only.
 const OUT = process.env.STC_OUT || path.join(__dirname, "out");
 
-const html = fs.readFileSync(PAGE, "utf8");
+// STC_HTML points the suite at a different copy of the page - used to test
+// the exact bytes that a deployed site is serving.
+const html = fs.readFileSync(process.env.STC_HTML || PAGE, "utf8");
 
 /* ------------------------------- DOM stub ------------------------------- */
 const registry = {};

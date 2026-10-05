@@ -1,5 +1,10 @@
 # S&T Calculator — Travel & Attendance Log
 
+**▶ Live tool: <https://mnquhe72.github.io/st-calculator/>**
+
+Open that link and the calculator runs in the browser. No login, nothing to install — send the
+link to anyone who needs it.
+
 A single-file web page that fills in the **Lead Educator Travel & Attendance Log** for the
 Spring Classes Programme (MIP 2026), then exports it to **Excel** or **PDF**.
 
@@ -10,8 +15,8 @@ device it is opened on.
 
 ## Using it
 
-1. Open `index.html` in any browser (Chrome, Edge, Firefox, Safari) — double-click it, or
-   use the shared web link.
+1. Open <https://mnquhe72.github.io/st-calculator/> — or, if you have the file, open `index.html`
+   in any browser (Chrome, Edge, Firefox, Safari).
 2. Fill in the details. The programme, school, educator and subject are pre-filled; change them
    for your own school.
    - Set the **start date** and **number of days**. A lesson start/end time is created for each day.
