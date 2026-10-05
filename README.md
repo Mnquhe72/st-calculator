@@ -67,21 +67,26 @@ is affected. Print / Save as PDF is the more reliable of the two.
 Send `index.html` on WhatsApp, by email, or via a shared drive. The recipient double-clicks it and
 it opens in their browser. This works offline and needs nothing installed.
 
-### Option B — a web link (recommended)
+### Option B — the web link (this is the live one)
 
-1. Create a public repository on GitHub (for example `st-calculator`).
-2. Upload `index.html` and this `README.md` into it.
-3. In the repository, open **Settings → Pages**.
-4. Under *Build and deployment*, set **Source** to `Deploy from a branch`, then choose the
-   **`main`** branch and the **`/ (root)`** folder, and save.
-5. After a minute your link is live, in the form:
-
-   ```
-   https://<your-username>.github.io/st-calculator/
-   ```
+**<https://mnquhe72.github.io/st-calculator/>**
 
 Anyone with that link can use the calculator in their browser. Nothing is installed, and no
 GitHub account is needed to open it.
+
+It is served by GitHub Pages from the **`main`** branch of
+[github.com/Mnquhe72/st-calculator](https://github.com/Mnquhe72/st-calculator), root folder
+(**Settings → Pages**). A Pages site requires a **public** repository on a free account.
+
+#### Updating the published site
+
+Edit `index.html` locally, then either:
+
+- push the change to `main` — the site rebuilds automatically in about a minute, or
+- use the **Edit** button on the file in GitHub and commit straight from the browser.
+
+Reload the page to pick up the change. If a change does not appear, wait a minute and hard-refresh
+(Ctrl+F5), because the CDN caches briefly.
 
 > A GitHub Pages link requires the repository to be **public**. On a free account, private
 > repositories cannot publish a Pages site.
