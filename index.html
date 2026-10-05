@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="S&amp;T Calculator - generates a completed Lead Educator Travel and Attendance Log with speedometer readings, and exports it to PDF or Excel.">
+<meta name="theme-color" content="#0b6b3a">
+<title>S&amp;T Calculator | KZN DOE Travel &amp; Attendance Log</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230b6b3a'/><text x='50' y='68' font-size='58' font-family='Arial' font-weight='bold' text-anchor='middle' fill='white'>S%26T</text></svg>">
+<style>
+  :root{
+    --green:#0b6b3a; --green-dark:#07502b; --gold:#b8860b;
+    --ink:#1c1c1c; --line:#111; --muted:#5b6470;
+    --bg:#eef1f4; --card:#fff; --accent:#007bff; --danger:#b3261e; --ok:#0f7b3f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Calibri,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); padding:16px; line-height:1.45;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    background:linear-gradient(135deg,var(--green),var(--green-dark));
+    color:#fff;border-radius:12px 12px 0 0;padding:18px 20px;text-align:center;
+  }
+  .masthead .prov{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;opacity:.9}
+  .masthead h1{margin:.25rem 0 0;font-size:1.35rem;letter-spacing:.02em}
+  .masthead h2{margin:.15rem 0 0;font-size:.95rem;font-weight:500;color:#d9f2e4}
+  .card{background:var(--card);border-radius:0 0 12px 12px;padding:20px;box-shadow:0 6px 18px rgba(20,30,45,.10)}
+  .card.standalone{border-radius:12px}
+
+  /* ---------- form ---------- */
+  fieldset{border:1px solid #d6dde5;border-radius:9px;margin:0 0 16px;padding:14px 16px 6px}
+  legend{font-weight:700;font-size:.86rem;color:var(--green);padding:0 6px;text-transform:uppercase;letter-spacing:.05em}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .grid.wide{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+  .form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+  .form-group label{font-weight:600;font-size:.82rem;color:#334}
+  .form-group .hint{font-size:.72rem;color:var(--muted);font-weight:400}
+  input,textarea{
+    padding:9px 10px;border:1px solid #c3ccd6;border-radius:7px;font-size:.92rem;
+    font-family:inherit;background:#fff;color:var(--ink);width:100%;
+  }
+  input:focus,textarea:focus{outline:2px solid rgba(11,107,58,.35);border-color:var(--green)}
+  input[type=number]{font-variant-numeric:tabular-nums}
+
+  .day-block{background:#f5f8fa;border:1px solid #dde5ec;border-left:4px solid var(--green);
+    border-radius:8px;padding:10px 12px;margin-bottom:10px}
+  .day-block h4{margin:0 0 8px;font-size:.86rem;color:#243242;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .day-block h4 .wk{color:var(--muted);font-weight:500}
+  .time-inputs{display:flex;gap:14px;flex-wrap:wrap}
+  .time-inputs .form-group{flex:1;min-width:130px;margin:0}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    padding:11px 18px;border:none;border-radius:8px;cursor:pointer;font-size:.92rem;font-weight:600;
+    font-family:inherit;color:#fff;margin:0 8px 8px 0;transition:filter .15s,transform .05s;
+  }
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6;cursor:progress}
+  .btn-primary{background:var(--green)}
+  .btn-pdf{background:#c0392b}
+  .btn-excel{background:#137a3f}
+  .btn-ghost{background:#5b6470}
+  .btn-sm{padding:7px 12px;font-size:.8rem}
+
+  /* ---------- warnings ---------- */
+  .alerts{margin:0 0 14px}
+  .alert{padding:9px 12px;border-radius:7px;font-size:.82rem;margin-bottom:7px;border-left:4px solid}
+  .alert.err{background:#fdecea;border-color:var(--danger);color:#7f1d1d}
+  .alert.warn{background:#fff8e1;border-color:#b8860b;color:#6b4b00}
+  .alert.ok{background:#e9f7ef;border-color:var(--ok);color:#14532d}
+
+  /* ---------- output document ---------- */
+  .doc{background:#fff;color:#000;font-family:Calibri,"Segoe UI",Arial,sans-serif}
+  .doc .info p{margin:3px 0;font-size:11pt}
+  .doc .doctitle{font-weight:700;margin-top:14px;font-size:12pt}
+  .doc .note{font-style:italic;font-size:9.5pt;margin:6px 0}
+  .doc .note b{font-style:normal}
+  .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.log{width:100%;border-collapse:collapse;margin-top:10px;font-size:9.5pt;min-width:900px}
+  table.log th,table.log td{border:1px solid var(--line);padding:5px 6px;text-align:center;vertical-align:middle}
+  table.log th{background:#d9d9d9;font-weight:700}
+  table.log td.txt{text-align:left}
+  .reason{font-weight:600}
+  .total{margin-top:12px;font-weight:700;font-size:11pt}
+  .sig{margin-top:34px;font-size:11pt}
+  .sig p{margin:0 0 26px}
+  .footer{margin-top:40px;text-align:center;font-weight:700;font-size:12pt}
+  .pill{display:inline-block;background:#eee;border:1px solid #bbb;border-radius:10px;font-size:8pt;padding:0 5px;margin-left:4px;vertical-align:middle}
+  .pill.bad{background:#fdecea;border-color:#c0392b;color:#7f1d1d}
+
+  .toolbar{margin-top:22px;padding-top:16px;border-top:1px dashed #c3ccd6}
+  .toolbar .status{font-size:.8rem;color:var(--muted);min-height:1.2em;margin-top:6px}
+  .tiny{font-size:.74rem;color:var(--muted);margin-top:18px}
+
+  /* ---------- print / PDF ----------
+     The print layout applies to `body.has-doc`, a class set by JavaScript when
+     a generated document is on screen and removed when the user returns to the
+     form. That keeps this independent of CSS :has() support, and makes a
+     browser-menu print (File > Print) before Generate print the form rather
+     than an empty skeleton or a stale table. */
+  @page{size:A4 landscape;margin:9mm}
+  @media print{
+    body.has-doc{background:#fff;padding:0;font-size:9pt}
+    body.has-doc .wrap{max-width:none}
+    body.has-doc .masthead,
+    body.has-doc .no-print,
+    body.has-doc input,
+    body.has-doc textarea{display:none !important}
+    body.has-doc .card{box-shadow:none;border-radius:0;padding:0}
+    body.has-doc .doc{display:block !important}
+    body.has-doc .tablewrap{overflow:visible}
+    body.has-doc table.log{min-width:0;font-size:8.5pt}
+    body.has-doc table.log th,
+    body.has-doc table.log td{padding:3px 4px}
+    body.has-doc th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body.has-doc .doc .info p{font-size:9pt}
+    body.has-doc .footer{margin-top:18px}
+    body.has-doc .sig{margin-top:22px}
+    body.has-doc .sig p{margin-bottom:18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead no-print">
+    <div class="prov">KwaZulu-Natal Department of Education</div>
+    <h1>S&amp;T Calculator &mdash; Travel &amp; Attendance Log</h1>
+    <h2>Spring Classes Programme &middot; MIP 2026</h2>
+  </header>
+
+  <main class="card">
+
+    <!-- ======================= INPUT FORM ======================= -->
+    <section id="formContainer" class="no-print">
+      <fieldset>
+        <legend>Programme</legend>
+        <div class="grid wide">
+          <div class="form-group">
+            <label for="programme">Programme name</label>
+            <input type="text" id="programme" value="SPRING CLASSES PROGRAMME – MIP 2026">
+          </div>
+          <div class="form-group">
+            <label for="schoolLoc">School / Arrival location</label>
+            <input type="text" id="schoolLoc" value="UMTAPO HIGH SCHOOL">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Lead educator</legend>
+        <div class="grid">
+          <div class="form-group">
+            <label for="educator">Lead educator (name &amp; initials)</label>
+            <input type="text" id="educator" value="MADONDO N.E.">
+          </div>
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" value="GEOGRAPHY">
+          </div>
+          <div class="form-group">
+            <label for="homeLoc">Home / Departure location</label>
+            <input type="text" id="homeLoc" value="4 SEAFORTH AVE, SALT ROCK BALLITO">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dates</legend>
+        <div class="grid">
+          <div class="form-group">
+            <label for="startDate">Start date</label>
+            <input type="date" id="startDate" value="2026-09-28">
+          </div>
+          <div class="form-group">
+            <label for="numDays">Number of days <span class="hint">(1&ndash;31)</span></label>
+            <input type="number" id="numDays" value="5" min="1" max="31" step="1">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Daily lesson times</legend>
+        <div id="dailyTimesContainer"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Distance &amp; speedometer</legend>
+        <div class="grid">
+          <div class="form-group">
+            <label for="startOdo">Starting speedometer reading (km)</label>
+            <input type="number" id="startOdo" value="92451" min="0" step="1">
+          </div>
+          <div class="form-group">
+            <label for="distance">One-way distance (km)</label>
+            <input type="number" id="distance" value="45" min="0" step="0.1">
+            <span class="hint">Round trip = 2 &times; this value.</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="alerts" id="formAlerts"></div>
+
+      <button type="button" class="btn btn-primary" id="generateBtn">Generate document</button>
+      <button type="button" class="btn btn-ghost" id="resetBtn">Reset saved details</button>
+    </section>
+
+    <!-- ======================= OUTPUT DOCUMENT ======================= -->
+    <section id="outputContainer" class="doc" style="display:none">
+      <div class="info">
+        <p><b>SCHOOL:</b> <span id="o_school"></span></p>
+        <p><b>LEAD EDUCATOR:</b> <span id="o_educator"></span></p>
+        <p><b>SUBJECT:</b> <span id="o_subject"></span></p>
+        <p><b>PROGRAMME:</b> <span id="o_programme"></span></p>
+        <p><b>PROGRAMME DATES:</b> <span id="o_dates"></span></p>
+        <p><b>DAILY DURATION:</b> <span id="o_duration"></span></p>
+      </div>
+
+      <div class="doctitle">LEAD EDUCATOR TRAVEL &amp; ATTENDANCE LOG</div>
+      <p class="note">
+        Travel rules applied: Depart 45 mins before lesson starts; Arrive 15 mins before lesson starts;
+        Depart 10 mins after lesson ends; Arrive 30 mins after lesson ends.<br>
+        <b>RULE: MAXIMUM 100 KILOMETERS RETURN TRIP PER DAY &mdash; TOTAL MAXIMUM 500KM</b>
+      </p>
+
+      <div class="alerts" id="outputAlerts"></div>
+
+      <div class="tablewrap">
+        <table class="log" id="logTable">
+          <thead>
+            <tr>
+              <th>DATE</th><th>REASON</th><th>DEPARTURE FROM</th><th>DEPARTURE TIME</th>
+              <th>ARRIVAL AT</th><th>ARRIVAL TIME</th><th>SPEEDOMETER START</th>
+              <th>SPEEDOMETER END</th><th>KILOMETRES</th>
+            </tr>
+          </thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+
+      <div class="total">TOTAL KILOMETRES TRAVELLED: <span id="o_total">0</span> KM</div>
+
+      <div class="sig">
+        <p><b>LEAD EDUCATOR SIGNATURE:</b> _________________________</p>
+        <p><b>DATE:</b> _________________________</p>
+        <p><b>CENTRE MANAGER SIGNATURE:</b> _________________________</p>
+        <p><b>DATE:</b> _________________________</p>
+        <p><b>SCHOOL STAMP:</b> (Please affix official school stamp here)</p>
+      </div>
+
+      <p class="footer">GROWING KWAZULU-NATAL TOGETHER</p>
+
+      <div class="toolbar no-print">
+        <button type="button" class="btn btn-excel" id="excelBtn">Download Excel (.xlsx)</button>
+        <button type="button" class="btn btn-pdf" id="printBtn">Print / Save as PDF</button>
+        <button type="button" class="btn btn-pdf" id="pdfBtn" style="display:none">Download PDF</button>
+        <button type="button" class="btn btn-ghost" id="editBtn">Edit details</button>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <p class="tiny no-print">
+      Everything runs inside this page &mdash; nothing is uploaded. Your details are remembered on this device only.
+      Excel export works offline; the optional PDF download button needs an internet connection, while
+      &ldquo;Print / Save as PDF&rdquo; works offline and produces a sharper, searchable document.
+    </p>
+  </main>
+</div>
+
+<!-- Optional: enables the one-click PDF download (only loaded if online). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        onload="window.__pdfLibReady=true" onerror="window.__pdfLibFailed=true"></script>
+
+<script>
+"use strict";
+(function () {
+
+  /* ============================================================
+     Fixed business rules (change here if the Department updates them)
+     ============================================================ */
+  var RULES = {
+    departBeforeLesson: 45,   // leave home 45 min before lesson starts
+    arriveBeforeLesson: 15,   // arrive at school 15 min before lesson starts
+    departAfterLesson:  10,   // leave school 10 min after lesson ends
+    arriveAfterLesson:  30,   // arrive home 30 min after lesson ends
+    maxRoundTripPerDay: 100,  // km
+    maxTotalKm:         500   // km
+  };
+
+  var STORAGE_KEY = "st-calculator-details-v1";
+
+  /* Sanity ceilings. They exist only to keep absurd input (1e308) from
+     producing "Infinity" distances and a NaN total; they are far above any
+     realistic school travel claim. */
+  var LIMITS = {
+    maxDistance: 1000,
+    maxOdometer: 10000000
+  };
+
+  /* ============================================================
+     Small helpers
+     ============================================================ */
+  function $(id) { return document.getElementById(id); }
+  function num(v, fallback) {
+    var n = parseFloat(v);
+    return isNaN(n) ? fallback : n;
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+  /** "08:00" -> 480. Returns null for blank/invalid input. */
+  function timeToMinutes(t) {
+    if (!t) return null;
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(t).trim());
+    if (!m) return null;
+    var h = parseInt(m[1], 10), mi = parseInt(m[2], 10);
+    if (h > 23 || mi > 59) return null;
+    return h * 60 + mi;
+  }
+  /** 480 -> "08:00" (wraps over midnight; callers use dayOffset for context). */
+  function minutesToTime(mins) {
+    var m = ((Math.round(mins) % 1440) + 1440) % 1440;
+    return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
+  }
+  function dayOffset(mins) { return Math.floor(mins / 1440); }
+
+  /** Parse "YYYY-MM-DD" as a LOCAL calendar date (avoids the UTC off-by-one bug). */
+  function parseISODate(s) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || "").trim());
+    if (!m) return null;
+    var y = parseInt(m[1], 10), mo = parseInt(m[2], 10), da = parseInt(m[3], 10);
+    var d = new Date(y, mo - 1, da);
+    // Reject dates that roll over (e.g. 2026-02-31) rather than silently accepting them.
+    if (isNaN(d.getTime()) || d.getFullYear() !== y || d.getMonth() !== mo - 1 || d.getDate() !== da) {
+      return null;
+    }
+    return d;
+  }
+  function addDays(d, n) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return null;
+    var c = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    c.setDate(c.getDate() + n);
+    return c;
+  }
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var WEEKDAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  /** "2026-09-28" -> "28-Sep-2026" */
+  function formatDate(d) {
+    return pad2(d.getDate()) + "-" + MONTHS[d.getMonth()] + "-" + d.getFullYear();
+  }
+  function weekdayName(d) { return WEEKDAYS[d.getDay()]; }
+
+  /**
+   * Display precision is chosen once per document and then applied to every
+   * odometer reading, distance and total, so a single document never mixes
+   * precisions and the cells always add up to exactly the printed total.
+   */
+  var docPrecision = 2;
+
+  /** Chooses the precision for a set of values (the largest drives it). */
+  function setPrecisionFor(values) {
+    var biggest = 0;
+    for (var i = 0; i < values.length; i++) {
+      var v = Math.abs(Number(values[i]));
+      if (isFinite(v) && v > biggest) biggest = v;
+    }
+    // Two decimals unless EVERY value in the document is already whole, in which
+    // case whole numbers are printed. Deciding from any single value would let a
+    // large whole total flip the precision out from under a fractional distance.
+    var anyFractional = false;
+    for (var j = 0; j < values.length; j++) {
+      var w = Number(values[j]);
+      if (isFinite(w) && Math.abs(w - Math.round(w)) >= 0.0005) { anyFractional = true; break; }
+    }
+    docPrecision = anyFractional ? 2 : 0;
+    return docPrecision;
+  }
+  function numDecimals(n) {
+    if (Math.abs(n - Math.round(n)) < 0.0005 && docPrecision > 0) {
+      // Whole values still print without a decimal point.
+      return 0;
+    }
+    return docPrecision;
+  }
+  /** Regularises a value to the document's display precision. */
+  function roundTo(n, places) {
+    var f = Math.pow(10, places);
+    return Math.round(n * f) / f;
+  }
+  function fmtNum(n) {
+    var places = numDecimals(n);
+    return places === 0 ? String(Math.round(n)) : Number(n).toFixed(places);
+  }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  /* ============================================================
+     Fields
+     ============================================================ */
+  var TEXT_FIELDS = ["programme", "schoolLoc", "educator", "subject", "homeLoc"];
+  var NUM_FIELDS  = ["startDate", "numDays", "startOdo", "distance"];
+
+  /**
+   * The number of days, parsed exactly once. <input type=number> also accepts
+   * exponent notation ("1e1"), which parseInt would truncate to 1, so the raw
+   * value is parsed with Number() and validated as a whole number in range.
+   * Every caller uses parsedDays() so validation, the day builders and the
+   * generated document can never disagree.
+   */
+  function parsedDays() {
+    var raw = $("numDays").value.trim();
+    var text = "Number of days";
+    if (raw === "") return { ok: false, message: "Please enter the number of days." };
+    // Plain decimal input only (exponent notation such as "1e1" is allowed,
+    // since <input type=number> accepts it); hex/octal/binary and anything with
+    // stray characters are rejected, so validation and generation cannot disagree.
+    if (!/^\d+(\.\d+)?([eE][+-]?\d+)?$/.test(raw)) {
+      return { ok: false, message: "Please enter the number of days as a whole number between 1 and 31 (you entered " + raw + ")." };
+    }
+    var n = Number(raw);
+    if (!isFinite(n) || isNaN(n)) {
+      return { ok: false, message: "Please enter the number of days." };
+    }
+    if (n !== Math.round(n)) {
+      return { ok: false, message: "The number of days must be a whole number (you entered " + raw + ")." };
+    }
+    if (n < 1 || n > 31) {
+      return { ok: false, message: "The number of days must be between 1 and 31 (you entered " + raw + ")." };
+    }
+    return { ok: true, days: n };
+  }
+  function numDaysValue() {
+    var p = parsedDays();
+    return p.ok ? p.days : 1;
+  }
+
+  function readDetails() {
+    var odo  = num($("startOdo").value, 0);
+    var dist = num($("distance").value, 0);
+    if (!isFinite(odo) || odo < 0) odo = 0;
+    if (!isFinite(dist) || dist < 0) dist = 0;
+    return {
+      programme: $("programme").value.trim() || "SPRING CLASSES PROGRAMME – MIP 2026",
+      schoolLoc: $("schoolLoc").value.trim() || "—",
+      educator:  $("educator").value.trim()  || "—",
+      subject:   $("subject").value.trim()   || "—",
+      homeLoc:   $("homeLoc").value.trim()   || "—",
+      startDate: $("startDate").value,
+      numDays:   numDaysValue(),
+      startOdo:  roundTo(odo, 2),
+      distance:  roundTo(dist, 2)
+    };
+  }
+
+  /* ============================================================
+     Daily lesson-time inputs
+     ============================================================ */
+  function readTimesFromForm(numDays) {
+    var out = [];
+    for (var i = 1; i <= numDays; i++) {
+      var s = $("lessonStart_" + i), e = $("lessonEnd_" + i);
+      if (!s || !e) { out.push(null); continue; }
+      var sm = timeToMinutes(s.value), em = timeToMinutes(e.value);
+      if (sm === null || em === null) { out.push(null); continue; }
+      out.push({ start: sm, end: em });
+    }
+    return out;
+  }
+
+  /** Rebuilds the per-day time pickers, preserving what the user already typed. */
+  function renderDayInputs(preserved) {
+    var start = parseISODate($("startDate").value);
+    var numDays = numDaysValue();
+    var container = $("dailyTimesContainer");
+    if (!start) {
+      container.innerHTML = "<p class='hint'>Choose a start date to build the daily lesson times.</p>";
+      return;
+    }
+    var html = "";
+    for (var i = 1; i <= numDays; i++) {
+      var d = addDays(start, i - 1);
+      var p = (preserved && preserved[i - 1]) ? preserved[i - 1] : null;
+      var sv = p ? minutesToTime(p.start) : "08:00";
+      var ev = p ? minutesToTime(p.end)   : "10:00";
+      html +=
+        '<div class="day-block">' +
+          '<h4><span>Day ' + i + ' &mdash; ' + esc(formatDate(d)) + '</span>' +
+          '<span class="wk">' + esc(weekdayName(d)) + '</span></h4>' +
+          '<div class="time-inputs">' +
+            '<div class="form-group"><label for="lessonStart_' + i + '">Lesson starts</label>' +
+              '<input type="time" id="lessonStart_' + i + '" value="' + sv + '"></div>' +
+            '<div class="form-group"><label for="lessonEnd_' + i + '">Lesson ends</label>' +
+              '<input type="time" id="lessonEnd_' + i + '" value="' + ev + '"></div>' +
+          '</div>' +
+        '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  /* ============================================================
+     Core calculation
+     ============================================================ */
+  function buildRows(details, times) {
+    var rows = [];
+    var warnings = [];
+    var errors = [];
+    var start = parseISODate(details.startDate);
+    if (!start) {
+      // generate() reports this to the user; here we only avoid crashing.
+      return {
+        rows: [], warnings: [], errors: errors, total: 0,
+        dateRange: "", durationText: ""
+      };
+    }
+    var startOdo = details.startOdo;
+    var dist = details.distance;
+    // The per-leg distance shown in the table (two decimal places), and the
+    // round-trip distance used to advance the odometer.
+    var distShown = roundTo(dist, 2);
+    var legKm = roundTo(dist * 2, 2);
+    var total = 0;
+
+    var lessonMinutesTotal = 0;
+
+    /** "2 Hours 7 Mins" / "1 Hour" / "45 Mins" - correct grammar, no odd rounding. */
+    function humanDuration(mins) {
+      var whole = Math.max(0, Math.round(mins));
+      var h = Math.floor(whole / 60);
+      var m = whole % 60;
+      var parts = [];
+      if (h) parts.push(h + (h === 1 ? " Hour" : " Hours"));
+      if (m || !h) parts.push(m + (m === 1 ? " Min" : " Mins"));
+      return parts.join(" ");
+    }
+    /** Turns total lesson minutes into the printed duration phrase. */
+    function durationText(totalMinutes) {
+      var perDay = details.numDays ? totalMinutes / details.numDays : 0;
+      var same = true;
+      for (var q = 1; q < times.length; q++) {
+        var a = times[q - 1], b = times[q];
+        if (!a || !b || (a.end - a.start) !== (b.end - b.start)) { same = false; break; }
+      }
+      var perDayText = same ? humanDuration(perDay) : "varies";
+      return details.numDays + (details.numDays === 1 ? " day" : " days") +
+        " \u00D7 " + perDayText + " (Total: " + humanDuration(totalMinutes) + ")";
+    }
+
+    for (var i = 0; i < details.numDays; i++) {
+      var d = addDays(start, i);
+      var t = times[i];
+      if (!t) {
+        errors.push("Day " + (i + 1) + " (" + formatDate(d) + "): please enter a valid lesson start and end time.");
+        continue;
+      }
+      if (t.end <= t.start) {
+        errors.push("Day " + (i + 1) + " (" + formatDate(d) + "): the lesson end time must be after the start time.");
+        continue;
+      }
+
+      var departHome   = t.start - RULES.departBeforeLesson;
+      var arriveSchool = t.start - RULES.arriveBeforeLesson;
+      var departSchool = t.end   + RULES.departAfterLesson;
+      var arriveHome   = t.end   + RULES.arriveAfterLesson;
+
+      lessonMinutesTotal += (t.end - t.start);
+
+      // Rounded to the displayed precision at each step, so the readings shown
+      // in the table chain exactly and sum exactly.
+      var odo0 = roundTo(startOdo, 2);
+      var odo1 = roundTo(odo0 + distShown, 2);   // arrival at school
+      var odo2 = roundTo(odo1 + distShown, 2);   // arrival back home
+
+      // Morning trip
+      rows.push({
+        date: formatDate(d), reason: "MIP",
+        from: details.homeLoc, departMin: departHome, departNote: RULES.departBeforeLesson + " mins before",
+        to: details.schoolLoc, arriveMin: arriveSchool, arriveNote: RULES.arriveBeforeLesson + " mins before",
+        odoStart: odo0, odoEnd: odo1, km: distShown,
+        departDay: dayOffset(departHome), arriveDay: dayOffset(arriveSchool)
+      });
+      // Afternoon trip
+      rows.push({
+        date: formatDate(d), reason: "Home",
+        from: details.schoolLoc, departMin: departSchool, departNote: RULES.departAfterLesson + " mins after",
+        to: details.homeLoc, arriveMin: arriveHome, arriveNote: RULES.arriveAfterLesson + " mins after",
+        odoStart: odo1, odoEnd: odo2, km: distShown,
+        departDay: dayOffset(departSchool), arriveDay: dayOffset(arriveHome)
+      });
+
+      startOdo = odo2;
+      total = roundTo(total + (odo2 - odo0), 2);   // the same values shown in the table
+
+      if (dist * 2 > RULES.maxRoundTripPerDay) {
+        warnings.push("Day " + (i + 1) + " (" + formatDate(d) + "): round trip is " +
+          fmtNum(dist * 2) + " km, which exceeds the " + RULES.maxRoundTripPerDay + " km daily maximum.");
+      }
+      if (dayOffset(departHome) < 0) {
+        warnings.push("Day " + (i + 1) + ": the lesson starts so early that the trip begins on the " +
+          "previous day (leave home " + minutesToTime(departHome) + "). Please check the lesson times.");
+      }
+      if (dayOffset(arriveHome) > 0) {
+        warnings.push("Day " + (i + 1) + ": the return trip runs past midnight (arrive home " +
+          minutesToTime(arriveHome) + " the next day). Please check the lesson times.");
+      }
+    }
+
+    if (total > RULES.maxTotalKm) {
+      warnings.push("Total travel is " + fmtNum(total) + " km, which exceeds the " +
+        RULES.maxTotalKm + " km programme maximum.");
+    }
+
+    var end = addDays(start, details.numDays - 1);
+    return {
+      rows: rows, warnings: warnings, errors: errors, total: total,
+      dateRange: formatDate(start) + " \u2013 " + formatDate(end),
+      durationText: durationText(lessonMinutesTotal)
+    };
+  }
+
+  /* ============================================================
+     Render output
+     ============================================================ */
+  var lastResult = null;
+  var lastDetails = null;
+
+  function renderAlerts(el, list, cls) {
+    el.innerHTML = list.map(function (msg) {
+      return '<div class="alert ' + cls + '">' + esc(msg) + '</div>';
+    }).join("");
+  }
+
+  function showOutput(details, result) {
+    // Decide the document's display precision BEFORE rendering anything, so the
+    // very first render uses the right number of decimals.
+    var allValues = [details.startOdo, details.distance, result.total];
+    for (var vi = 0; vi < result.rows.length; vi++) {
+      allValues.push(result.rows[vi].odoStart, result.rows[vi].odoEnd, result.rows[vi].km);
+    }
+    setPrecisionFor(allValues);
+
+    $("o_school").textContent    = details.schoolLoc;
+    $("o_educator").textContent  = details.educator;
+    $("o_subject").textContent   = details.subject;
+    $("o_programme").textContent = details.programme;
+    $("o_dates").textContent     = result.dateRange;
+    $("o_duration").textContent  = result.durationText;
+    $("o_total").textContent     = fmtNum(result.total);
+
+    var body = $("logBody");
+    var html = "";
+    for (var i = 0; i < result.rows.length; i++) {
+      var r = result.rows[i];
+      var lateTag = (r.arriveDay > 0) ? '<span class="pill bad">next day</span>' : "";
+      html +=
+        "<tr>" +
+          '<td>' + esc(r.date) + '</td>' +
+          '<td class="reason">' + esc(r.reason) + '</td>' +
+          '<td class="txt">' + esc(r.from) + '</td>' +
+          '<td>' + minutesToTime(r.departMin) +
+            (r.departDay < 0 ? '<span class="pill bad">previous day</span>' : "") +
+            '<br><small>(' + esc(r.departNote) + ')</small></td>' +
+          '<td class="txt">' + esc(r.to) + '</td>' +
+          '<td>' + minutesToTime(r.arriveMin) + lateTag + '<br><small>(' + esc(r.arriveNote) + ')</small></td>' +
+          '<td>' + fmtNum(r.odoStart) + '</td>' +
+          '<td>' + fmtNum(r.odoEnd) + '</td>' +
+          '<td>' + fmtNum(r.km) + '</td>' +
+        "</tr>";
+    }
+    body.innerHTML = html;
+
+    var alerts = [];
+    if (result.warnings.length) {
+      renderAlerts($("outputAlerts"), result.warnings, "warn");
+    } else {
+      renderAlerts($("outputAlerts"), ["All travel rules are satisfied (" +
+        RULES.maxRoundTripPerDay + " km per day, " + RULES.maxTotalKm + " km programme total)."], "ok");
+    }
+
+    $("formAlerts").innerHTML = "";
+    $("formAlerts").style.display = "none";
+    $("formContainer").style.display = "none";
+    $("outputContainer").style.display = "block";
+    document.body.className = document.body.className.replace(/\s*has-doc\s*/g, " ").trim() + " has-doc";
+    $("status").textContent = "";
+    window.scrollTo(0, 0);
+  }
+
+  /* ============================================================
+     Generate
+     ============================================================ */
+  function generate() {
+    var details = readDetails();
+    var errors = [];
+
+    if (!parseISODate(details.startDate)) errors.push("Please choose a valid start date.");
+
+    var rawDist = num($("distance").value, NaN);
+    if (!isFinite(rawDist) || rawDist <= 0) {
+      errors.push("One-way distance must be greater than 0 km.");
+    } else if (rawDist > LIMITS.maxDistance) {
+      errors.push("One-way distance must be " + LIMITS.maxDistance +
+        " km or less (you entered " + rawDist + ").");
+    }
+
+    var daysCheck = parsedDays();
+    if (!daysCheck.ok) errors.push(daysCheck.message);
+
+    var rawOdo = $("startOdo").value.trim();
+    var odoNum = num(rawOdo, NaN);
+    if (rawOdo === "" || !isFinite(odoNum) || odoNum < 0) {
+      errors.push("Please enter a valid starting speedometer reading.");
+    } else if (odoNum > LIMITS.maxOdometer) {
+      errors.push("The starting speedometer reading must be " + LIMITS.maxOdometer +
+        " km or less (you entered " + odoNum + ").");
+    }
+
+    var times = readTimesFromForm(details.numDays);
+    var result = buildRows(details, times);
+    errors = errors.concat(result.errors);
+
+    if (errors.length) {
+      renderAlerts($("formAlerts"), errors, "err");
+      // Keep the form visible and point at the problem.
+      $("formAlerts").scrollIntoView({ block: "center", behavior: "smooth" });
+      return false;
+    }
+    $("formAlerts").innerHTML = "";
+    lastDetails = details;
+    lastResult = result;
+    showOutput(details, result);
+    return true;
+  }
+
+  /* ============================================================
+     Excel (.xlsx) export  —  built as a real Office Open XML package
+     ============================================================ */
+  function xmlEsc(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+  }
+
+  var XLSX_COLUMNS = [
+    { name: "DATE",               width: 13 },
+    { name: "REASON",             width: 10 },
+    { name: "DEPARTURE FROM",     width: 34 },
+    { name: "DEPARTURE TIME",     width: 17 },
+    { name: "ARRIVAL AT",         width: 28 },
+    { name: "ARRIVAL TIME",       width: 17 },
+    { name: "SPEEDOMETER START",  width: 17 },
+    { name: "SPEEDOMETER END",    width: 17 },
+    { name: "KILOMETRES",         width: 12 }
+  ];
+  var XLSX_COLCOUNT = XLSX_COLUMNS.length;
+  var XLSX_LASTCOL = String.fromCharCode(64 + XLSX_COLCOUNT); // 9 cols -> "I"
+
+  /**
+   * Formats one cell value. Whole numbers are written without a decimal point;
+   * fractional values keep one decimal. Returns null for blanks.
+   */
+  function xlsxNum(v) {
+    var n = Number(v);
+    if (!isFinite(n)) return null;
+    var places = numDecimals(n);
+    return places === 0 ? String(Math.round(n)) : n.toFixed(places);
+  }
+
+  function cell(r, c, value, styleIdx, isNumber) {
+    var ref = String.fromCharCode(64 + c) + r;
+    var s = styleIdx ? ' s="' + styleIdx + '"' : "";
+    var inner = "";
+    if (value !== null && value !== undefined && value !== "") {
+      if (isNumber) {
+        var txt = xlsxNum(value);
+        inner = (txt === null) ? "" : "<v>" + txt + "</v>";
+      } else {
+        inner = '<is><t xml:space="preserve">' + xmlEsc(value) + "</t></is>";
+      }
+    }
+    return '<c r="' + ref + '"' + s + ' t="' + (isNumber ? "n" : "inlineStr") + '">' + inner + "</c>";
+  }
+
+  /** A formula cell (cached value keeps the sheet readable before recalculation). */
+  function formulaCell(r, c, formula, cached, styleIdx) {
+    var ref = String.fromCharCode(64 + c) + r;
+    return '<c r="' + ref + '" s="' + styleIdx + '"><f>' + formula + "</f><v>" + cached + "</v></c>";
+  }
+
+  function buildSheetXml(details, result) {
+    var out = [];
+    var rowXml = function (r, cells) { return '<row r="' + r + '">' + cells + "</row>"; };
+    var line = function (r, text, style) { return rowXml(r, cell(r, 1, text, style, false)); };
+
+    out.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
+    out.push('<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">');
+
+    // Column widths, tuned so location names stay readable on one line.
+    var widths = [14, 9, 40, 15, 27, 15, 17, 17, 12];
+    out.push("<cols>");
+    for (var c = 1; c <= XLSX_COLCOUNT; c++) {
+      out.push('<col min="' + c + '" max="' + c + '" width="' + widths[c - 1] + '" customWidth="1"/>');
+    }
+    out.push("</cols>");
+
+    out.push("<sheetData>");
+
+    var mergeRows = [];
+    var blank = function (r) { return line(r, "", 3); };
+    var infoLine = function (r, text) { mergeRows.push(r); return line(r, text, 3); };
+
+    // ---- preamble ------------------------------------------------------
+    mergeRows.push(1);
+    out.push(line(1, "KWAZULU-NATAL DEPARTMENT OF EDUCATION", 1));
+    mergeRows.push(2);
+    out.push(line(2, details.programme, 2));
+    out.push(blank(3));
+    out.push(infoLine(4, "SCHOOL: " + details.schoolLoc));
+    out.push(infoLine(5, "LEAD EDUCATOR: " + details.educator));
+    out.push(infoLine(6, "SUBJECT: " + details.subject));
+    out.push(infoLine(7, "PROGRAMME DATES: " + result.dateRange));
+    out.push(infoLine(8, "DAILY DURATION: " + result.durationText));
+    out.push(blank(9));
+    mergeRows.push(10);
+    out.push(line(10, "LEAD EDUCATOR TRAVEL & ATTENDANCE LOG", 4));
+    mergeRows.push(11);
+    out.push(line(11, "Travel rules applied: Depart 45 mins before lesson starts; Arrive 15 mins before lesson starts; " +
+      "Depart 10 mins after lesson ends; Arrive 30 mins after lesson ends.", 5));
+    mergeRows.push(12);
+    out.push(line(12, "RULE: MAXIMUM 100 KILOMETERS RETURN TRIP PER DAY - TOTAL MAXIMUM 500KM", 4));
+    out.push(blank(13));
+
+    // ---- table header --------------------------------------------------
+    var HEADER_ROW = 14;
+    var headerCells = "";
+    for (var i = 0; i < XLSX_COLCOUNT; i++) {
+      headerCells += cell(HEADER_ROW, i + 1, XLSX_COLUMNS[i].name, 6, false);
+    }
+    out.push(rowXml(HEADER_ROW, headerCells));
+
+    // ---- one row per trip, with numeric odometer and distance cells ----
+    var firstDataRow = HEADER_ROW + 1;
+    var r = firstDataRow;
+    for (var d = 0; d < result.rows.length; d++) {
+      var t = result.rows[d];
+      out.push(rowXml(r,
+        cell(r, 1, t.date, 7, false) +
+        cell(r, 2, t.reason, 7, false) +
+        cell(r, 3, t.from, 7, false) +
+        cell(r, 4, minutesToTime(t.departMin) + " (" + t.departNote + ")", 7, false) +
+        cell(r, 5, t.to, 7, false) +
+        cell(r, 6, minutesToTime(t.arriveMin) + " (" + t.arriveNote + ")", 7, false) +
+        cell(r, 7, t.odoStart, 7, true) +
+        cell(r, 8, t.odoEnd, 7, true) +
+        cell(r, 9, t.km, 7, true)
+      ));
+      r++;
+    }
+    var lastDataRow = r - 1;
+
+    // ---- total (a live SUM so the sheet stays correct if a value is edited)
+    var TOTAL_ROW = r;
+    out.push(rowXml(TOTAL_ROW,
+      cell(TOTAL_ROW, 1, "TOTAL KILOMETRES TRAVELLED", 8, false) +
+      formulaCell(TOTAL_ROW, 9, "SUM(I" + firstDataRow + ":I" + lastDataRow + ")", fmtNum(result.total), 8)
+    ));
+    r++;
+
+    // ---- sign-off ------------------------------------------------------
+    out.push(blank(r++));
+    out.push(blank(r++));
+    ["LEAD EDUCATOR SIGNATURE: _________________________",
+     "DATE: _________________________",
+     "CENTRE MANAGER SIGNATURE: _________________________",
+     "DATE: _________________________",
+     "SCHOOL STAMP: (Please affix official school stamp here)"].forEach(function (text) {
+      mergeRows.push(r);
+      out.push(line(r, text, 5));
+      r++;
+    });
+    out.push(blank(r++));
+    mergeRows.push(r);
+    out.push(line(r, "GROWING KWAZULU-NATAL TOGETHER", 1));
+    var lastRow = r;
+
+    out.push("</sheetData>");
+
+    // ECMA-376 requires a strict child order here: autoFilter, then mergeCells.
+    out.push("<autoFilter ref=\"A" + HEADER_ROW + ":" + XLSX_LASTCOL + lastDataRow + "\"/>");
+
+    // Merge the non-tabular lines across the full table width.
+    out.push('<mergeCells count="' + mergeRows.length + '">');
+    for (var mi = 0; mi < mergeRows.length; mi++) {
+      out.push('<mergeCell ref="A' + mergeRows[mi] + ":" + XLSX_LASTCOL + mergeRows[mi] + '"/>');
+    }
+    out.push("</mergeCells>");
+    out.push('<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>');
+    out.push('<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/>');
+    out.push("</worksheet>");
+    return out.join("");
+  }
+
+  function buildStylesXml() {
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<fonts count="4">' +
+        '<font><sz val="11"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="16"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="13"/><name val="Calibri"/></font>' +
+        '<font><b/><sz val="11"/><name val="Calibri"/></font>' +
+      '</fonts>' +
+      '<fills count="4">' +
+        '<fill><patternFill patternType="none"/></fill>' +
+        '<fill><patternFill patternType="gray125"/></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFD9D9D9"/><bgColor indexed="64"/></patternFill></fill>' +
+        '<fill><patternFill patternType="solid"><fgColor rgb="FFEAF3EC"/><bgColor indexed="64"/></patternFill></fill>' +
+      '</fills>' +
+      '<borders count="2">' +
+        '<border><left/><right/><top/><bottom/><diagonal/></border>' +
+        '<border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right>' +
+        '<top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border>' +
+      '</borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="9">' +
+        // 0 default
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+        // 1 title
+        '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">' +
+          '<alignment horizontal="center" vertical="center"/></xf>' +
+        // 2 subtitle
+        '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">' +
+          '<alignment horizontal="center" vertical="center"/></xf>' +
+        // 3 info line
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">' +
+          '<alignment horizontal="left" vertical="center"/></xf>' +
+        // 4 bold section heading
+        '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1">' +
+          '<alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+        // 5 small note
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">' +
+          '<alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+        // 6 table header
+        '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">' +
+          '<alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+        // 7 table body (bordered, wrapped, centred)
+        '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1">' +
+          '<alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+        // 8 total row
+        '<xf numFmtId="0" fontId="3" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1">' +
+          '<alignment horizontal="left" vertical="center"/></xf>' +
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+  }
+
+  function buildXlsxBlob(details, result) {
+    // Same precision as the document on screen, so both agree exactly.
+    var vals = [details.startOdo, details.distance, result.total];
+    for (var vi = 0; vi < result.rows.length; vi++) {
+      vals.push(result.rows[vi].odoStart, result.rows[vi].odoEnd, result.rows[vi].km);
+    }
+    setPrecisionFor(vals);
+    var contentTypes =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      '</Types>';
+
+    var rootRels =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>';
+
+    var workbook =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets><sheet name="Travel Log" sheetId="1" r:id="rId1"/></sheets>' +
+      '</workbook>';
+
+    var workbookRels =
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+      '</Relationships>';
+
+    var files = [
+      { name: "[Content_Types].xml",        data: contentTypes },
+      { name: "_rels/.rels",                data: rootRels },
+      { name: "xl/workbook.xml",            data: workbook },
+      { name: "xl/_rels/workbook.xml.rels", data: workbookRels },
+      { name: "xl/styles.xml",              data: buildStylesXml() },
+      { name: "xl/worksheets/sheet1.xml",   data: buildSheetXml(details, result) }
+    ];
+
+    var parts = files.map(function (f) {
+      return {
+        name: f.name,
+        bytes: utf8Bytes(f.data),
+        crc: crc32(utf8Bytes(f.data))
+      };
+    });
+
+    return new Blob([zipStore(parts)], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    });
+  }
+
+  function utf8Bytes(str) {
+    if (typeof TextEncoder !== "undefined") return new TextEncoder().encode(str);
+    var utf8 = unescape(encodeURIComponent(str));
+    var out = new Uint8Array(utf8.length);
+    for (var i = 0; i < utf8.length; i++) out[i] = utf8.charCodeAt(i);
+    return out;
+  }
+
+  var CRC_TABLE = (function () {
+    var table = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      table[n] = c >>> 0;
+    }
+    return table;
+  })();
+
+  function crc32(bytes) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  /** Minimal ZIP writer (stored / no compression). */
+  function zipStore(parts) {
+    var chunks = [];
+    var central = [];
+    var offset = 0;
+
+    function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+    function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+    function ascii(s) { var a = []; for (var i = 0; i < s.length; i++) a.push(s.charCodeAt(i) & 0xFF); return a; }
+
+    // DOS date/time (fixed, reproducible)
+    var dosTime = u16((12 << 11) | (0 << 5) | (0 >> 1));
+    var dosDate = u16(((2026 - 1980) << 9) | (1 << 5) | 1);
+
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      var nameBytes = ascii(p.name);
+      var local = [].concat(
+        u32(0x04034b50), u16(20), u16(0x0800), u16(0),
+        dosTime, dosDate,
+        u32(p.crc), u32(p.bytes.length), u32(p.bytes.length),
+        u16(nameBytes.length), u16(0)
+      );
+      chunks.push(new Uint8Array(local), new Uint8Array(nameBytes), p.bytes);
+
+      central.push(new Uint8Array([].concat(
+        u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0),
+        dosTime, dosDate,
+        u32(p.crc), u32(p.bytes.length), u32(p.bytes.length),
+        u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0),
+        u32(offset)
+      )));
+      central.push(new Uint8Array(nameBytes));
+
+      offset += local.length + nameBytes.length + p.bytes.length;
+    }
+
+    var centralStart = offset;
+    var centralSize = 0;
+    for (var c = 0; c < central.length; c++) centralSize += central[c].length;
+
+    var end = new Uint8Array([].concat(
+      u32(0x06054b50), u16(0), u16(0),
+      u16(parts.length), u16(parts.length),
+      u32(centralSize), u32(centralStart), u16(0)
+    ));
+
+    return new Blob([].concat(chunks, central, [end]));
+  }
+
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+
+  function fileStamp() {
+    return lastResult ? lastResult.dateRange.replace(/\s+/g, "").replace(/\u2013/g, "_to_") : "travel";
+  }
+
+  function exportExcel() {
+    if (!lastResult) return;
+    var btn = $("excelBtn");
+    btn.disabled = true;
+    $("status").textContent = "Building spreadsheet\u2026";
+    try {
+      var blob = buildXlsxBlob(lastDetails, lastResult);
+      downloadBlob(blob, "Travel_Log_" + fileStamp() + ".xlsx");
+      $("status").textContent = "Excel file downloaded. Open it in Excel, LibreOffice or Google Sheets.";
+    } catch (err) {
+      $("status").textContent = "Could not build the spreadsheet: " + err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* ============================================================
+     PDF export
+     ============================================================ */
+  function printDocument() {
+    // Never print the empty output skeleton: build the document first.
+    if (!lastResult && !generate()) {
+      showStatus("Complete the highlighted details, then print again.");
+      return;
+    }
+    window.print(); // "Save as PDF" in the browser print dialog - works offline
+  }
+
+  /** Shows a short message in the output toolbar (used when print is blocked). */
+  function showStatus(message) {
+    var el = $("status");
+    if (el) el.textContent = message;
+    var alerts = $("formAlerts");
+    if (alerts && alerts.innerHTML) {
+      alerts.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }
+
+  function downloadPdf() {
+    if (!window.html2pdf) {
+      window.print();
+      return;
+    }
+    var btn = $("pdfBtn");
+    btn.disabled = true;
+    $("status").textContent = "Generating PDF\u2026";
+    var opt = {
+      margin: [10, 10, 10, 10],
+      filename: "Travel_Log_" + fileStamp() + ".pdf",
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+    };
+    window.html2pdf().set(opt).from($("outputContainer")).save()
+      .then(function () { $("status").textContent = "PDF downloaded."; })
+      .catch(function (e) { $("status").textContent = "PDF failed (" + e + "). Use Print / Save as PDF instead."; })
+      .then(function () { btn.disabled = false; });
+  }
+
+  /* ============================================================
+     Persistence
+     ============================================================ */
+  function saveDetails() {
+    try {
+      var data = {};
+      TEXT_FIELDS.concat(NUM_FIELDS).forEach(function (id) { data[id] = $(id).value; });
+      data.times = readTimesFromForm(numDaysValue());
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) { /* storage may be blocked - silently ignore */ }
+  }
+
+  function loadDetails() {
+    var raw;
+    try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { return false; }
+    if (!raw) return false;
+    var data;
+    try { data = JSON.parse(raw); } catch (e) { return false; }
+    if (!data || typeof data !== "object") return false;
+    TEXT_FIELDS.concat(NUM_FIELDS).forEach(function (id) {
+      if (typeof data[id] === "string" && data[id] !== "") $(id).value = data[id];
+    });
+    return Array.isArray(data.times) ? data.times : false;
+  }
+
+  /* ============================================================
+     Wiring
+     ============================================================ */
+  function init() {
+    var savedTimes = loadDetails();
+
+    // First-time visitors: keep the shipped defaults.
+    $("startDate").addEventListener("change", function () { renderDayInputs(readTimesFromForm(31)); saveDetails(); });
+    $("numDays").addEventListener("change", function () { renderDayInputs(readTimesFromForm(31)); saveDetails(); });
+    $("numDays").addEventListener("input", function () {
+      var n = numDaysValue();
+      if (document.querySelectorAll(".day-block").length !== n) renderDayInputs(readTimesFromForm(31));
+    });
+    TEXT_FIELDS.forEach(function (id) { $(id).addEventListener("input", saveDetails); });
+    NUM_FIELDS.forEach(function (id) { $(id).addEventListener("change", saveDetails); });
+
+    $("generateBtn").addEventListener("click", generate);
+    $("resetBtn").addEventListener("click", function () {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      location.reload();
+    });
+
+    $("excelBtn").addEventListener("click", exportExcel);
+    $("printBtn").addEventListener("click", printDocument);
+    $("pdfBtn").addEventListener("click", downloadPdf);
+    $("editBtn").addEventListener("click", function () {
+      // The shown document is now stale; make the next print regenerate it.
+      lastResult = null;
+      lastDetails = null;
+      document.body.className = document.body.className.replace(/\s*has-doc\s*/g, " ").trim();
+      $("outputContainer").style.display = "none";
+      $("formContainer").style.display = "block";
+      $("formAlerts").style.display = "block";
+      window.scrollTo(0, 0);
+    });
+
+    // Rebuild day pickers from whatever the user had, else the defaults.
+    var restore = Array.isArray(savedTimes) && savedTimes.length ? savedTimes : null;
+    renderDayInputs(restore);
+
+    // Offer the one-click PDF button only when the helper library loaded.
+    window.addEventListener("load", function () {
+      if (window.__pdfLibReady && window.html2pdf) $("pdfBtn").style.display = "inline-block";
+    });
+    if (window.__pdfLibReady && window.html2pdf) $("pdfBtn").style.display = "inline-block";
+
+    // Ctrl/Cmd+P on the form screen should print the generated document, not the form.
+    document.addEventListener("keydown", function (ev) {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key && ev.key.toLowerCase() === "p") {
+        ev.preventDefault();
+        printDocument();
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
